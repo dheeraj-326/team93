@@ -2,7 +2,7 @@
 from sklearn.ensemble import RandomForestRegressor
 # from sklearn.linear_model import LinearRegression
 from sklearn.cross_validation import train_test_split
-from sklearn.ensemble import ExtraTreesRegressor
+from sklearn.neighbors import KNeighborsRegressor
 import pandas as pd
 import numpy as np
 from numpy import array
@@ -30,13 +30,14 @@ inputParams = ["PickupDate","Origin Zip Code","Destination Zip Code","Distance",
 
 
 
-class Regressor:
+class KNNRegressor:
     def __init__(self, root_path, retrain = False):
+        self.data_file_name = "CleanedData.csv"
         self.data_file_name = os.path.join(root_path, "hackathon", "regressor", "CleanedData.csv")
-        self.model_file_name = os.path.join(root_path, "hackathon", "regressor" "RandomForestPickle.pkl")
-        self.finalDFfile_name = os.path.join(root_path, "hackathon", "regressor" "finalDf.pkl")
-        self.labelsfile_name = os.path.join(root_path, "hackathon", "regressor" "labelsDf.pkl")
-        self.nonNumEncDffile_name = os.path.join(root_path, "hackathon", "regressor" "nonNumEncDf.pkl")
+        self.model_file_name = os.path.join(root_path, "hackathon", "regressor" "KNNPickle.pkl")
+        self.finalDFfile_name = os.path.join(root_path, "hackathon", "regressor" "knnfinalDf.pkl")
+        self.labelsfile_name = os.path.join(root_path, "hackathon", "regressor" "knnlabelsDf.pkl")
+        self.nonNumEncDffile_name = os.path.join(root_path, "hackathon", "regressor" "knnnonNumEncDf.pkl")
         
         self.nonNumEncDf = None
         self.regressor = None
@@ -94,7 +95,7 @@ class Regressor:
 #         train_input_fn = tf.estimator.inputs.numpy_input_fn(
 #             x={'x': x_train}, y=y_train, batch_size=1, num_epochs=None, shuffle=True)
 #         regressor.train(input_fn=train_input_fn, steps=5000)
-        regressor = RandomForestRegressor(n_estimators=5000)
+        regressor = KNeighborsRegressor(n_neighbors=4)
         
         regressor.fit(x_train, y_train)
 #         regressor.fit(x_train, y_train)
@@ -140,6 +141,7 @@ class Regressor:
         with open(self.nonNumEncDffile_name, mode="wb") as file:
 #             mat = nonNumEncDf.as_matrix()
             pickle._dump(nonNumEncDf, file)
+        print("Saved")
     
     def predict(self, paramsDict):
         valarr = np.array(self.encodeSingle(paramsDict))
@@ -222,6 +224,6 @@ class Regressor:
             traceback.print_exc()
             exists = False
         return exists
-# root_path = os.path.abspath(os.path.join(os.path.dirname(__file__)))
-# regress = Regressor(root_path, retrain=True)
+
+# regress = KNNRegressor(retrain=True)
 # regress.trainModel()
