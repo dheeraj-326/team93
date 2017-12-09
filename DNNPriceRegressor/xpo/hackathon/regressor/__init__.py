@@ -15,8 +15,9 @@ import time
 import dateutil.parser
 from sklearn import metrics
 from sklearn import preprocessing
+import traceback
 
-nonNumericCols = ["Equipment Type","Order Type", "Lane", "Customer Id"]
+nonNumericCols = ["Equipment Type","Order Type", "Customer Id"]
 labelCol = "Total Cost USD"
 # dateCols = ["Month", "Day", "UnixTime"]
 dateCols = ["Month"]
@@ -31,21 +32,22 @@ inputParams = ["PickupDate","Origin Zip Code","Destination Zip Code","Distance",
 
 
 class Regressor:
-    def __init__(self):
-        self.data_file_name = "CleanedDataTest.csv"
-        self.model_file_name = "RandomForestPickle.pkl"
-        self.featuresDFfile_name = "featuresDf.pkl"
-        self.labelsfile_name = "labelsDf.pkl"
-        self.nonNumEncDffile_name = "nonNumEncDf.pkl"
+    def __init__(self, retrain = False):
+        self.data_file_name = "C:/Users/dheeraj.b/workspaces/python_ws/DNNPriceRegressor/xpo/hackathon/regressor/CleanedData.csv"
+        self.model_file_name = "C:/Users/dheeraj.b/workspaces/python_ws/DNNPriceRegressor/xpo/hackathon/regressor/RandomForestPickle.pkl"
+        self.finalDFfile_name = "C:/Users/dheeraj.b/workspaces/python_ws/DNNPriceRegressor/xpo/hackathon/regressor/finalDf.pkl"
+        self.labelsfile_name = "C:/Users/dheeraj.b/workspaces/python_ws/DNNPriceRegressor/xpo/hackathon/regressor/labelsDf.pkl"
+        self.nonNumEncDffile_name = "C:/Users/dheeraj.b/workspaces/python_ws/DNNPriceRegressor/xpo/hackathon/regressor/nonNumEncDf.pkl"
         
         self.nonNumEncDf = None
         self.regressor = None
-        self.featuresDf = None
+        self.finalDf = None
         self.labelsDf = None
-        
-        if not self.modelTrained():
+        print(self.modelTrained())
+        if not self.modelTrained() or retrain:
 #             pass
             self.trainModel()
+            self.modelTrained()
         else:
             print("Saved model found")
     
@@ -70,7 +72,7 @@ class Regressor:
 #         for ele in finalDf.as_matrix():
 #             f.write(str(ele))
 #         f.close()
-        x_train, x_test, y_train, y_test =  train_test_split(finalDf, labelsDf, test_size=0.10, random_state=4)
+        x_train, x_test, y_train, y_test =  train_test_split(finalDf, labelsDf, test_size=0.30, random_state=4)
         y_train = y_train.values.ravel()
         y_test = y_test.values.ravel()
 #         x_train_dict = {}
@@ -84,23 +86,23 @@ class Regressor:
 #         [x_train_dict[k] = x_train[k] for k in x_train]
         print(x_train.shape)
         print(y_train.shape)
-        x_train = x_train.as_matrix()
-        x_test = x_test.as_matrix()
+#         x_train = x_train.as_matrix()
+#         x_test = x_test.as_matrix()
 #         y_train = y_train.tolist()
-        feature_columns = [tf.feature_column.numeric_column('x', shape=x_train.shape[1:])]
-        regressor = tf.estimator.DNNRegressor(
-            feature_columns=feature_columns, hidden_units=[50, 30, 10])
-        train_input_fn = tf.estimator.inputs.numpy_input_fn(
-            x={'x': x_train}, y=y_train, batch_size=1, num_epochs=None, shuffle=True)
-        regressor.train(input_fn=train_input_fn, steps=5000)
-#         regressor = RandomForestRegressor(n_estimators=10000)
+#         feature_columns = [tf.feature_column.numeric_column('x', shape=x_train.shape[1:])]
+#         regressor = tf.estimator.DNNRegressor(
+#             feature_columns=feature_columns, hidden_units=[50, 30, 10])
+#         train_input_fn = tf.estimator.inputs.numpy_input_fn(
+#             x={'x': x_train}, y=y_train, batch_size=1, num_epochs=None, shuffle=True)
+#         regressor.train(input_fn=train_input_fn, steps=5000)
+        regressor = RandomForestRegressor(n_estimators=5000)
         
-#         regressor.fit(x_train, y_train)
+        regressor.fit(x_train, y_train)
 #         regressor.fit(x_train, y_train)
 #         scaler = preprocessing.StandardScaler()
 #         x_transformed = scaler.transform(x_test)
-        test_input_fn = tf.estimator.inputs.numpy_input_fn(
-              x={'x': x_test}, y=y_test, num_epochs=1, shuffle=False)
+#         test_input_fn = tf.estimator.inputs.numpy_input_fn(
+#               x={'x': x_test}, y=y_test, num_epochs=1, shuffle=False)
 #         
         preds = regressor.predict(x_test)
 #         plt.scatter(y_test, preds, color='black')
@@ -109,56 +111,36 @@ class Regressor:
 #         plt.yticks(())
 #         plt.show()
 #         print(type(preds))
-        for p in preds:
-            print(p['predictions'])
+#         for p in preds:
+#             print(p['predictions'])
 #         y_predicted = np.array(list(p['predictions'] for p in preds))
-        y_predicted = y_predicted.reshape(np.array(y_test).shape)
+#         y_predicted = y_predicted.reshape(np.array(y_test).shape)
 #         score_sklearn = metrics.mean_squared_error(preds, y_test)
         train_preds = regressor.predict(x_train)
-        for p in train_preds:
-            print(p['predictions'])
+#         for p in train_preds:
+#             print(p['predictions'])
 #         train_predicted = np.array(list(p['predictions'] for p in train_preds))
-        train_predicted = y_predicted.reshape(np.array(y_test).shape)
-        score_sklearn = metrics.mean_squared_error(y_predicted, y_test)
-        train_score = metrics.mean_squared_error(train_predicted, y_train)     
+#         train_predicted = y_predicted.reshape(np.array(y_test).shape)
+        score_sklearn = metrics.mean_squared_error(preds, y_test)
+        train_score = metrics.mean_squared_error(train_preds, y_train)     
         for i in range(len(train_preds)):
             diff = math.fabs(y_train[i]-train_preds[i])
             if diff>200:
                 print("Actual ", y_train[i], "Pred ", train_preds[i], "Diff ", diff)
         print("M.S Error (Test)", score_sklearn)
         print("M.S Error (Train)", train_score)
-#         regressor.predict(x_test)
-#         zeros = 0
-#         diffs = y_test-preds
-#         sums = ((y_test-preds))/(y_test)
-#         sums = sums**2
-#         for diff in diffs:
-#             if diff < 0.001:
-#                 zeros+=1
-        #     else:
-        #         print(diff)        
-#         for i in range(len(preds)):
-#             print(preds)
-#         sum = 0
-#         for i in range(len(preds)):
-#             n = y_test[i] - preds[i]      
-# #             n = n**2 / (y_test[i])**2
-#             if i % 20 == 0:
-#                 print("actual ", y_test[i], "pred ", preds[i], "diff ", n)
-# #                       , "x_test", x_test.iloc[i])
-#             sum += n
-#         sum = sum/len(preds)
-#         print(sum)
-#         sum = 100 - np.sum(sums)/len(preds)*100
-#         print("Accuracy ", sum)
-#         with open(self.model_file_name, mode="wb+") as file:
-#             pickle._dump(regressor, file)
-#         with open(self.labelsfile_name, mode="wb+") as file:
-#             pickle._dump(labelsDf, file)
-#         with open(self.featuresDFfile_name, mode="wb+") as file:
-#             pickle._dump(featureDf, file)
-#         with open(self.nonNumEncDffile_name, mode="wb+") as file:
-#             pickle._dump(nonNumEncDf, file)
+        
+        with open(self.model_file_name, mode="wb") as file:
+            pickle._dump(regressor, file)
+        with open(self.labelsfile_name, mode="wb") as file:
+#             mat = labelsDf.as_matrix()
+            pickle._dump(labelsDf, file)
+        with open(self.finalDFfile_name, mode="wb") as file:
+#             mat = featureDf.as_matrix()
+            pickle._dump(finalDf, file)
+        with open(self.nonNumEncDffile_name, mode="wb") as file:
+#             mat = nonNumEncDf.as_matrix()
+            pickle._dump(nonNumEncDf, file)
     
     def predict(self, paramsDict):
         valarr = self.encodeSingle(paramsDict)
@@ -167,31 +149,30 @@ class Regressor:
     
     def encodeSingle(self, paramsDict):
         arr = None
-        dt = paramsDict['PickupDate']
-        unixTime = time.mktime(dt.timetuple())
-        mnth = dt.month
-        year = dt.year
-        keyslist = self.featuresDf.keys() 
+        keyslist = list(self.finalDf.keys())
+        paramKeys = list(paramsDict.keys())
+        print(keyslist)
         sz = len(keyslist)
-        for k in keyslist:
+        for k in paramKeys:
             arr = np.zeros(sz).tolist()
-            if k in dateCols:
+#             if k in dateCols:
+#                 ind = keyslist.index(k)
+#                 if k == "UnixTime":
+#                     arr[ind] = unixTime
+#                 elif k == "Month":
+#                     arr[ind] = mnth
+#                 else:
+#                     arr[ind] = year
+            if k in keyslist:
+                curr = paramsDict[k]
                 ind = keyslist.index(k)
-                if k == "UnixTime":
-                    arr[ind] = unixTime
-                elif k == "Month":
-                    arr[ind] = mnth
-                else:
-                    arr[ind] = year
-            elif k in nonNumericCols:
+                arr[ind] = curr
+                
+            else:
                 curr = paramsDict[k]
                 if curr in keyslist:
                     ind = keyslist.index(curr)
                     arr[ind] = 1
-            else:
-                ind = keyslist.index(k)
-                curr = paramsDict[k]
-                arr[ind] = curr
 #             vals.append(arr)
         return arr
     
@@ -213,86 +194,34 @@ class Regressor:
             nonNumEncDf = pd.concat(nonNumEncDfs, axis=1)
         return finalFrame, nonNumEncDf
     
-#     def encodeDateDfBatch(self, dateDf):
-#         srs = pd.Series(dateDf.stack())
-#         dateDf = pd.to_datetime(srs)
-#         dateList = []
-#         dataSecKeys = ["Year"]
-#         for i in range(0,7):
-#             klabel = "Group"+str(i)
-#             dataSecKeys.append(klabel)
-#         i=0
-#         print(type(dateDf.iloc[0]))
-#         for item in dateDf:        
-#             encdates = [0,0,0,0,0,0,0,0]
-#             if isinstance(item, pd.Timestamp):
-#                 itemDt = item.date() 
-#                 year = itemDt.year            
-#                 monthsect = int((itemDt.month + 1)/2)
-#     #             print(i, " ", itemDt.month, " ", monthsect)
-#                 encdates[0] = year
-#                 encdates[monthsect+1] = 1
-#     #         print(i, " ",itemDt.month, " ", monthsect)
-#             dateList.append(encdates)
-#             i+=1
-#         encDf = pd.DataFrame.from_records(dateList, columns=dataSecKeys)
-#         return encDf
     
     def modelTrained(self):
         exists = False
         try:
-            a = open(self.encDateDffile_name)
-            b = open(self.featuresDFfile_name)
-            c = open(self.labelsfile_name)
-            d = open(self.nonNumEncDffile_name)
-            e = open(self.model_file_name)
-            a.close()
+            b = open(self.finalDFfile_name, mode="rb")
+#             mat = pickle.load(b)
+#             self.finalDf = pd.DataFrame(mat)
+            self.finalDf = pickle.load(b)
+            c = open(self.labelsfile_name, mode="rb")
+#             mat = pickle.load(c)
+#             self.labelsDf = pd.DataFrame(mat)
+            self.labelsDf = pickle.load(c)
+            d = open(self.nonNumEncDffile_name, mode="rb")
+#             mat = pickle.load(d)
+#             self.nonNumEncDf = pd.DataFrame(mat)
+            self.nonNumEncDf = pickle.load(d)
+            e = open(self.model_file_name, mode="rb")
+            self.regressor = pickle.load(e)
             b.close()
             c.close()
             d.close()
             e.close()
             exists = True
-        except:
+        except Exception as e:
+            print(e)
+            traceback.print_exc()
             exists = False
         return exists
 
-regress = Regressor()
-regress.trainModel()
-# contin = True
-# while(contin):
-#     pdict = {}
-#     for val in inputParams:
-#         inp = input(val)
-#         pdict[val] = inp
-#     outval = regress.predict(pdict)
-#     print("Output ", outval)
-
-# for i in sums:
-#     sum += i    
-# print(100 - sum*100)
-# print(sum)    
-# scores = (y_test - preds)/(y_test)
-# print(scores)
-# for itm in x_train:
-#     print(itm)
-# print(x_test[5])
-# for itm in x_train:
-#     print(itm)
-# for i in range(0, len(y_test)):
-#     print(x_test[i])
-#     print("Pred : ", regressor.predict(x_test[i]), "Actual : ", y_test[i])
-
-
-# print()
-# print(finalDf)
-# print(arr[0])
-# print(numericDf.keys())
-# print(nonNumericDf.keys())
-# vls = list('abca')
-# sers = pd.Series(vals)
-# dummies = pd.get_dummies(sers)
-# print(dummies['XPOCHA'])
-# print(len(dummies))
-# for i in range(0, len(dummies)):
-# for val in dummies:
-#     print(val, " ", dummies[val])
+regress = Regressor(retrain=True)
+# regress.trainModel()
