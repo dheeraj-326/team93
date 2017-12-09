@@ -1,5 +1,3 @@
-import tensorflow as tf
-from tensorflow.contrib.learn import DNNRegressor
 # from tensorflow.python.ops.io_ops import TextLineReader
 from sklearn.ensemble import RandomForestRegressor
 # from sklearn.linear_model import LinearRegression
@@ -33,18 +31,18 @@ inputParams = ["PickupDate","Origin Zip Code","Destination Zip Code","Distance",
 
 class Regressor:
     def __init__(self, retrain = False):
-        self.data_file_name = "C:/Users/dheeraj.b/workspaces/python_ws/DNNPriceRegressor/xpo/hackathon/regressor/CleanedData.csv"
-        self.model_file_name = "C:/Users/dheeraj.b/workspaces/python_ws/DNNPriceRegressor/xpo/hackathon/regressor/RandomForestPickle.pkl"
-        self.finalDFfile_name = "C:/Users/dheeraj.b/workspaces/python_ws/DNNPriceRegressor/xpo/hackathon/regressor/finalDf.pkl"
-        self.labelsfile_name = "C:/Users/dheeraj.b/workspaces/python_ws/DNNPriceRegressor/xpo/hackathon/regressor/labelsDf.pkl"
-        self.nonNumEncDffile_name = "C:/Users/dheeraj.b/workspaces/python_ws/DNNPriceRegressor/xpo/hackathon/regressor/nonNumEncDf.pkl"
+        self.data_file_name = "D:/team93/DNNPriceRegressor/xpo/hackathon/regressor/CleanedData.csv"
+        self.model_file_name = "D:/team93/DNNPriceRegressor/xpo/hackathon/regressor/RandomForestPickle.pkl"
+        self.finalDFfile_name = "D:/team93/DNNPriceRegressor/xpo/hackathon/regressor/finalDf.pkl"
+        self.labelsfile_name = "D:/team93/DNNPriceRegressor/xpo/hackathon/regressor/labelsDf.pkl"
+        self.nonNumEncDffile_name = "D:/team93/DNNPriceRegressor/xpo/hackathon/regressor/nonNumEncDf.pkl"
         
         self.nonNumEncDf = None
         self.regressor = None
         self.finalDf = None
         self.labelsDf = None
         print(self.modelTrained())
-        if not self.modelTrained() or retrain:
+        if not self.modelTrained():
 #             pass
             self.trainModel()
             self.modelTrained()
@@ -143,7 +141,8 @@ class Regressor:
             pickle._dump(nonNumEncDf, file)
     
     def predict(self, paramsDict):
-        valarr = self.encodeSingle(paramsDict)
+        valarr = np.array(self.encodeSingle(paramsDict))
+        valarr = valarr.reshape(1, -1)
         outputVal = self.regressor.predict(valarr)
         return outputVal
     
@@ -153,8 +152,8 @@ class Regressor:
         paramKeys = list(paramsDict.keys())
         print(keyslist)
         sz = len(keyslist)
-        for k in paramKeys:
-            arr = np.zeros(sz).tolist()
+        arr = np.zeros(sz).tolist()
+        for k in paramKeys:            
 #             if k in dateCols:
 #                 ind = keyslist.index(k)
 #                 if k == "UnixTime":

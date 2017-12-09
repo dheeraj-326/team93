@@ -1,3 +1,8 @@
+import os, sys
+currDir = os.path.dirname(os.path.realpath(__file__))
+rootDir = os.path.abspath(os.path.join(currDir, '..'))
+if rootDir not in sys.path: # add parent dir to paths
+    sys.path.append(rootDir)
 from flask import Flask
 from flask import request
 from flask.json import jsonify
@@ -49,4 +54,4 @@ def test():
 # val = parser.parse('6/22/2017 20:30')
 # print(val.hour)
 SingletonRegressor.initialiser()
-app.run(host='TVMATP379617D', port=8008, debug=True)
+app.run(host='localhost', port=8008, debug=True)
